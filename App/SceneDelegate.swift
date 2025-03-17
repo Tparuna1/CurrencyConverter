@@ -16,7 +16,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let someScene = (scene as? UIWindowScene) else { return }
 
         window = UIWindow(windowScene: someScene)
-        let firstVC = ViewController()
+        let firstVC = CurrencyConverterViewController()
         let someNavigationController = UINavigationController(rootViewController: firstVC)
         window?.backgroundColor = .systemBackground
         window?.rootViewController = someNavigationController
