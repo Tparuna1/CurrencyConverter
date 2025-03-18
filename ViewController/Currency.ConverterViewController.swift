@@ -49,7 +49,7 @@ private extension CurrencyConverterViewController {
   }
   
   func makeConstraints() {
-      stackView.snp.makeConstraints { make in
+      stackView.snp.remakeConstraints { make in
           make.centerX.equalToSuperview()
           make.centerY.equalToSuperview()
           make.leading.equalToSuperview().offset(20)

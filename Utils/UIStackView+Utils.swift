@@ -13,7 +13,7 @@ extension UIStackView {
     axis: NSLayoutConstraint.Axis,
     distribution: UIStackView.Distribution = .fill,
     alignment: UIStackView.Alignment = .fill,
-    spacing: CGFloat = 0
+    spacing: CGFloat = .zero
   ) {
     self.init()
     self.axis = axis
