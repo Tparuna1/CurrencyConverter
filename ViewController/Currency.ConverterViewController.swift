@@ -41,6 +41,8 @@ final class CurrencyConverterViewController: UIViewController {
   
   private let exchangeRateLabel = UILabel(font: .systemFont(ofSize: 16.0), textColor: .gray)
   
+  private let historyStackView = UIStackView(axis: .vertical, spacing: 8.0)
+  
   // MARK: - Lifecycle
   
   override func viewDidLoad() {
@@ -63,6 +65,9 @@ final class CurrencyConverterViewController: UIViewController {
   private func addSubviews() {
     stackView.addArrangedSubviews([fromCurrencyLabel, amountTextField, exchangeRateLabel, toCurrencyLabel, convertedAmountTextField])
     view.addSubview(stackView)
+    
+    historyStackView.addArrangedSubview(UILabel(font: .systemFont(ofSize: 16.0), textColor: .black))
+    view.addSubview(historyStackView)
   }
   
   private func makeConstraints() {
@@ -71,6 +76,11 @@ final class CurrencyConverterViewController: UIViewController {
       make.centerY.equalToSuperview()
       make.leading.equalToSuperview().offset(20)
       make.trailing.equalToSuperview().offset(-20)
+    }
+    
+    historyStackView.snp.makeConstraints { make in
+      make.top.equalTo(stackView.snp.bottom).offset(20)
+      make.leading.trailing.equalToSuperview().inset(20)
     }
     
     amountTextField.snp.makeConstraints { make in
@@ -144,24 +154,34 @@ final class CurrencyConverterViewController: UIViewController {
       }
       .store(in: &cancellables)
     
-    /// Debounce amount field input and trigger conversion
-    amountTextField.textPublisher
+    viewModel.$conversionHistory
       .dispatchOnMainQueue()
-      .removeDuplicates()
-      .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
-      .sink { [weak self] _ in
-        Task { await self?.viewModel.convert() }
+      .sink { [weak self] history in
+        self?.updateHistoryView(with: history)
       }
       .store(in: &cancellables)
   }
   
+  // MARK: - Update History View
+  
+  private func updateHistoryView(with history: [ConversionHistory]) {
+    historyStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+    historyStackView.addArrangedSubview(UILabel(font: .systemFont(ofSize: 16.0), textColor: .black))
+    
+    history.forEach { conversion in
+        let historyLabel = UILabel()
+        historyLabel.text = "\(conversion.fromAmount) \(conversion.fromCurrency.symbol) = \(conversion.toAmount) \(conversion.toCurrency.symbol)"
+        historyLabel.font = .systemFont(ofSize: 14)
+        historyLabel.textColor = .black
+        historyStackView.addArrangedSubview(historyLabel)
+    }
+  }
+
   // MARK: - Error Handling
   
   private func showError(_ message: String) {
-    let alert = UIAlertController(title: String(localized: "alert.error.title"),
-                    message: message,
-                    preferredStyle: .alert)
-    alert.addAction(UIAlertAction(title: String(localized: "alert.button.ok"), style: .default))
+    let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+    alert.addAction(UIAlertAction(title: "OK", style: .default))
     present(alert, animated: true)
   }
 }

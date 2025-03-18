@@ -23,6 +23,9 @@ class CurrencyConverterViewModel: ObservableObject {
   @Published var errorMessage: String? = nil
   @Published var exchangeRate: String = ""
   
+  // MARK: - Conversion History
+  @Published var conversionHistory: [ConversionHistory] = []
+  
   // MARK: - Private Properties
   
   private let service: CurrencyServiceProtocol
@@ -87,8 +90,20 @@ class CurrencyConverterViewModel: ObservableObject {
     }
     
     let convertedValue = amount * exchangeRateValue
-    
     convertedAmount = String(format: "%.2f", convertedValue)
+    
+    /// Store the conversion history
+    let newHistory = ConversionHistory(fromAmount: amount,
+                                       fromCurrency: fromCurrency,
+                                       toAmount: convertedValue,
+                                       toCurrency: toCurrency,
+                                       exchangeRate: exchangeRateValue)
+    
+    /// Append the new history and limit to the last 5 entries
+    conversionHistory.insert(newHistory, at: 0)
+    if conversionHistory.count > 5 {
+      conversionHistory.removeLast()
+    }
   }
   
   // MARK: - Error Handling
