@@ -8,118 +8,131 @@
 import Foundation
 import Combine
 
-class CurrencyConverterViewModel: ObservableObject {
-  // MARK: - Published Properties
-  
-  @Published var fromCurrency: Currency = .euro
-  @Published var toCurrency: Currency = .usd
-  @Published var inputAmount: String = "1.0" {
-    didSet {
-      /// Automatically trigger conversion when inputAmount changes
-      Task { await convert() }
-    }
-  }
-  @Published var convertedAmount: String = ""
-  @Published var errorMessage: String? = nil
-  @Published var exchangeRate: String = ""
-  
-  // MARK: - Conversion History
-  @Published var conversionHistory: [ConversionHistory] = []
-  
-  // MARK: - Private Properties
-  
-  private let service: CurrencyServiceProtocol
-  private var cancellables = Set<AnyCancellable>()
-  private var timer: AnyCancellable?
-  
-  // MARK: - Initializer
-  
-  init(service: CurrencyServiceProtocol = CurrencyService()) {
-    self.service = service
-    setupBindings()
-    fetchInitialExchangeRate()
-  }
-  
-  // MARK: - Setup Methods
-  
-  private func setupBindings() {
-    /// Bind the input fields (debounced) to trigger conversion
-    Publishers.CombineLatest3($inputAmount, $fromCurrency, $toCurrency)
-      .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
-      .sink { [weak self] _, _, _ in
-        Task { await self?.convert() }
-      }
-      .store(in: &cancellables)
+final class CurrencyConverterViewModel: ObservableObject {
+    // MARK: - Published Properties
     
-    /// Timer for periodic refresh of exchange rate
-    timer = Timer.publish(every: 10, on: .main, in: .common)
-      .autoconnect()
-      .sink { [weak self] _ in
-        /// Refresh exchange rate periodically
-        Task { await self?.fetchExchangeRate() }
-      }
-  }
-  
-  // MARK: - Public Methods
-  
-  func fetchInitialExchangeRate() {
-    Task { await self.fetchExchangeRate() }
-  }
-  
-  func fetchExchangeRate() async {
-    do {
-      let exchangeRateValue = try await service.fetchExchangeRate(fromAmount: 1.0,
-                                                                  fromCurrency: fromCurrency,
-                                                                  toCurrency: toCurrency)
-      
-      exchangeRate = String(format: "%.4f", exchangeRateValue)
-    } catch {
-      handleError(error)
+    @Published var fromCurrency: Currency = .euro
+    @Published var toCurrency: Currency = .usd
+    @Published var inputAmount: String = "1.0" {
+        didSet {
+            /// Automatically trigger conversion when inputAmount changes
+            Task { await convert() }
+        }
     }
-  }
-  
-  func convert() async {
-    guard let amount = Double(inputAmount) else {
-      errorMessage = "Invalid amount"
-      return
+    @Published var convertedAmount: String = ""
+    @Published var errorMessage: String? = nil
+    @Published var exchangeRate: String = ""
+    
+    // MARK: - Conversion History
+    @Published var conversionHistory: [ConversionHistory] = []
+    
+    // MARK: - Private Properties
+    
+    private let service: CurrencyServiceProtocol
+    private var cancellables = Set<AnyCancellable>()
+    private var timer: AnyCancellable?
+    
+    // MARK: - Initializer
+    
+    init(service: CurrencyServiceProtocol = CurrencyService()) {
+        self.service = service
+        setupBindings()
+        fetchInitialExchangeRate()
     }
     
-    guard let exchangeRateValue = Double(exchangeRate), exchangeRateValue > 0 else {
-      errorMessage = "Invalid exchange rate"
-      return
+    // MARK: - Setup Methods
+    
+    private func setupBindings() {
+        /// Bind the input fields (debounced) to trigger conversion
+        Publishers.CombineLatest3($inputAmount, $fromCurrency, $toCurrency)
+            .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
+            .sink { [weak self] _, _, _ in
+                Task { await self?.fetchExchangeRate() }
+            }
+            .store(in: &cancellables)
+        
+        /// Timer for periodic refresh of exchange rate
+        timer = Timer.publish(every: 10, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                /// Refresh exchange rate periodically
+                Task { await self?.fetchExchangeRate() }
+            }
     }
     
-    let convertedValue = amount * exchangeRateValue
-    convertedAmount = String(format: "%.2f", convertedValue)
+    // MARK: - Public Methods
     
-    /// Store the conversion history
-    let newHistory = ConversionHistory(fromAmount: amount,
-                                       fromCurrency: fromCurrency,
-                                       toAmount: convertedValue,
-                                       toCurrency: toCurrency,
-                                       exchangeRate: exchangeRateValue)
-    
-    /// Append the new history and limit to the last 5 entries
-    conversionHistory.insert(newHistory, at: 0)
-    if conversionHistory.count > 5 {
-      conversionHistory.removeLast()
+    func fetchInitialExchangeRate() {
+        Task { await self.fetchExchangeRate() }
     }
-  }
-  
-  // MARK: - Error Handling
-  
-  private func handleError(_ error: Error) {
-    guard let error = error as? CurrencyServiceError else { return }
     
-    switch error {
-    case .invalidURL:
-      errorMessage = "Invalid URL"
-    case .decodingError(let message):
-      errorMessage = message
-    case .networkError(let error):
-      errorMessage = error.localizedDescription
-    case .taskCancelled:
-      errorMessage = nil
+    func swapCurrencies() {
+        let tempCurrency = fromCurrency
+        fromCurrency = toCurrency
+        toCurrency = tempCurrency
+        
+        // After swapping, fetch the updated exchange rate
+        Task { await fetchExchangeRate() }
     }
-  }
+    
+    func fetchExchangeRate() async {
+        do {
+            let exchangeRateValue = try await service.fetchExchangeRate(
+                fromAmount: 1.0,
+                fromCurrency: fromCurrency,
+                toCurrency: toCurrency
+            )
+            
+            exchangeRate = String(format: "%.4f", exchangeRateValue)
+        } catch {
+            handleError(error)
+        }
+    }
+    
+    func convert() async {
+        guard let amount = Double(inputAmount) else {
+            errorMessage = "Invalid amount"
+            return
+        }
+        
+        guard let exchangeRateValue = Double(exchangeRate), exchangeRateValue > 0 else {
+            errorMessage = "Invalid exchange rate"
+            return
+        }
+        
+        let convertedValue = amount * exchangeRateValue
+        convertedAmount = String(format: "%.2f", convertedValue)
+        
+        /// Store the conversion history
+        let newHistory = ConversionHistory(
+            fromAmount: amount,
+            fromCurrency: fromCurrency,
+            toAmount: convertedValue,
+            toCurrency: toCurrency,
+            exchangeRate: exchangeRateValue
+        )
+        
+        /// Append the new history and limit to the last 5 entries
+        conversionHistory.insert(newHistory, at: 0)
+        if conversionHistory.count > 5 {
+            conversionHistory.removeLast()
+        }
+    }
+    
+    // MARK: - Error Handling
+    
+    private func handleError(_ error: Error) {
+        guard let error = error as? CurrencyServiceError else { return }
+        
+        switch error {
+        case .invalidURL:
+            errorMessage = "Invalid URL"
+        case .decodingError(let message):
+            errorMessage = message
+        case .networkError(let error):
+            errorMessage = error.localizedDescription
+        case .taskCancelled:
+            errorMessage = nil
+        }
+    }
 }

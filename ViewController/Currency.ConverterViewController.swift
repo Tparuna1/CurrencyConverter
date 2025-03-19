@@ -18,59 +18,33 @@ final class CurrencyConverterViewController: UIViewController {
     
     // MARK: - UI Components
     
-    private lazy var stackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 16.0
-        return stack
-    }()
+    private lazy var converterContainer = ContainerView()
+    private lazy var historyContainer = ContainerView()
     
-    private lazy var fromCurrencyLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16.0)
-        label.textColor = .black
-        return label
-    }()
+    private lazy var fromCurrencyField = CurrencyTextField(type: .sell)
+    private lazy var toCurrencyField = CurrencyTextField(type: .buy)
     
-    private lazy var toCurrencyLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16.0)
-        label.textColor = .black
-        return label
-    }()
-    
-    private lazy var amountTextField: UITextField = {
-        let textField = UITextField()
-        textField.borderStyle = .roundedRect
-        textField.keyboardType = .decimalPad
-        textField.textAlignment = .left
-        return textField
-    }()
-    
-    private lazy var convertedAmountTextField: UITextField = {
-        let textField = UITextField()
-        textField.borderStyle = .roundedRect
-        textField.keyboardType = .decimalPad
-        textField.isUserInteractionEnabled = false
-        textField.textAlignment = .right
-        return textField
-    }()
+    private lazy var reverseButton = ButtonComponent(type: .reverse)
+    private lazy var convertButton = ButtonComponent(type: .convert)
     
     private lazy var exchangeRateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 16.0)
+        label.font = .systemFont(ofSize: 14)
         label.textColor = .gray
+        label.textAlignment = .center
         return label
     }()
     
-    private lazy var historyContainerView: UIView = {
+    private lazy var converterStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 24.0
+        stack.alignment = .fill
+        return stack
+    }()
+    
+    private lazy var fieldContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.systemGray6
-        view.layer.cornerRadius = 12
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.1
-        view.layer.shadowOffset = CGSize(width: 0, height: 2)
-        view.layer.shadowRadius = 4
         return view
     }()
     
@@ -87,60 +61,87 @@ final class CurrencyConverterViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupBindings()
+        setupActions()
         
-        amountTextField.text = viewModel.inputAmount
+        fromCurrencyField.text = viewModel.inputAmount
+        toCurrencyField.isUserInteractionEnabled = false
     }
     
     // MARK: - Private Methods
     
     private func setupUI() {
         view.backgroundColor = .white
+        title = "Currency Converter"
+        
         addSubviews()
         makeConstraints()
     }
     
     private func addSubviews() {
-        stackView.addArrangedSubviews([fromCurrencyLabel, amountTextField, exchangeRateLabel, toCurrencyLabel, convertedAmountTextField])
-        view.addSubview(stackView)
+        // Add field container with from/to fields and reverse button
+        fieldContainerView.addSubview(fromCurrencyField)
+        fieldContainerView.addSubview(toCurrencyField)
+        fieldContainerView.addSubview(reverseButton)
         
-        historyContainerView.addSubview(historyStackView)
-        view.addSubview(historyContainerView)
+        // Add all elements to converter stack
+        converterStackView.addArrangedSubviews([
+            fieldContainerView,
+            exchangeRateLabel,
+            convertButton
+        ])
+        
+        // Add stacks to containers
+        converterContainer.addContent(converterStackView)
+        historyContainer.addContent(historyStackView)
+        
+        // Add containers to main view
+        view.addSubview(converterContainer)
+        view.addSubview(historyContainer)
     }
     
     private func makeConstraints() {
-        stackView.snp.remakeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview()
+        converterContainer.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(20)
             make.leading.trailing.equalToSuperview().inset(20)
         }
         
-        historyContainerView.snp.makeConstraints { make in
-            make.top.equalTo(stackView.snp.bottom).offset(20)
+        historyContainer.snp.makeConstraints { make in
+            make.top.equalTo(converterContainer.snp.bottom).offset(20)
             make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(20)
         }
         
-        historyStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(12)
+        fieldContainerView.snp.makeConstraints { make in
+            make.height.equalTo(120)
         }
         
-        amountTextField.snp.makeConstraints { make in
-            make.width.equalTo(100)
+        fromCurrencyField.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
         }
         
-        convertedAmountTextField.snp.makeConstraints { make in
-            make.width.equalTo(100)
+        toCurrencyField.snp.makeConstraints { make in
+            make.bottom.leading.trailing.equalToSuperview()
         }
         
-        exchangeRateLabel.snp.makeConstraints { make in
-            make.width.equalTo(100)
+        reverseButton.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.size.equalTo(50)
         }
         
-        fromCurrencyLabel.snp.makeConstraints { make in
-            make.width.equalTo(60)
+        convertButton.snp.makeConstraints { make in
+            make.height.equalTo(50)
+        }
+    }
+    
+    private func setupActions() {
+        reverseButton.setTapHandler { [weak self] in
+            self?.viewModel.swapCurrencies()
         }
         
-        toCurrencyLabel.snp.makeConstraints { make in
-            make.width.equalTo(60)
+        convertButton.setTapHandler { [weak self] in
+            Task { [weak self] in
+                await self?.viewModel.convert()
+            }
         }
     }
     
@@ -148,7 +149,7 @@ final class CurrencyConverterViewController: UIViewController {
     
     private func setupBindings() {
         /// Bind the amount text field to the ViewModel's input amount
-        amountTextField.textPublisher
+        fromCurrencyField.textPublisher
             .dispatchOnMainQueue()
             .sink { [weak self] text in
                 self?.viewModel.inputAmount = text
@@ -159,7 +160,7 @@ final class CurrencyConverterViewController: UIViewController {
         viewModel.$convertedAmount
             .dispatchOnMainQueue()
             .sink { [weak self] value in
-                self?.convertedAmountTextField.text = value
+                self?.toCurrencyField.text = value
             }
             .store(in: &cancellables)
         
@@ -176,7 +177,7 @@ final class CurrencyConverterViewController: UIViewController {
         viewModel.$exchangeRate
             .dispatchOnMainQueue()
             .sink { [weak self] rate in
-                self?.exchangeRateLabel.text = "Rate: \(rate)"
+                self?.exchangeRateLabel.text = "Exchange Rate: \(rate)"
             }
             .store(in: &cancellables)
         
@@ -184,14 +185,14 @@ final class CurrencyConverterViewController: UIViewController {
         viewModel.$fromCurrency
             .dispatchOnMainQueue()
             .sink { [weak self] currency in
-                self?.fromCurrencyLabel.text = currency.symbol
+                self?.fromCurrencyField.updateCurrencySymbol(currency.symbol)
             }
             .store(in: &cancellables)
         
         viewModel.$toCurrency
             .dispatchOnMainQueue()
             .sink { [weak self] currency in
-                self?.toCurrencyLabel.text = currency.symbol
+                self?.toCurrencyField.updateCurrencySymbol(currency.symbol)
             }
             .store(in: &cancellables)
         
