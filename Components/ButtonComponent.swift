@@ -84,14 +84,11 @@ final class ButtonComponent: UIView {
 extension ButtonComponent {
     enum ButtonType {
         case reverse
-        case convert
         
         var title: String {
             switch self {
             case .reverse:
                 return ""
-            case .convert:
-                return "Convert"
             }
         }
         
@@ -99,8 +96,6 @@ extension ButtonComponent {
             switch self {
             case .reverse:
                 return .systemBlue
-            case .convert:
-                return .systemGreen
             }
         }
     }

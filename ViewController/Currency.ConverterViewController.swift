@@ -36,7 +36,6 @@ final class CurrencyConverterViewController: UIViewController {
     private lazy var toCurrencyField = CurrencyTextField(type: .buy)
 
     private lazy var reverseButton = ButtonComponent(type: .reverse)
-    private lazy var convertButton = ButtonComponent(type: .convert)
 
     private lazy var exchangeRateLabel: UILabel = {
         let label = UILabel()
@@ -100,7 +99,6 @@ final class CurrencyConverterViewController: UIViewController {
             selectorsContainer,
             fieldsContainer,
             exchangeRateLabel,
-            convertButton
         ])
 
         historyContainer.addContent(historyStackView)
@@ -126,21 +124,11 @@ final class CurrencyConverterViewController: UIViewController {
             make.centerY.equalTo(fieldsContainer.contentView)
             make.size.equalTo(50)
         }
-
-        convertButton.snp.makeConstraints { make in
-            make.height.equalTo(50)
-        }
     }
 
     private func setupActions() {
         reverseButton.setTapHandler { [weak self] in
             self?.viewModel.swapCurrencies()
-        }
-
-        convertButton.setTapHandler { [weak self] in
-            Task { [weak self] in
-                await self?.viewModel.convert()
-            }
         }
     }
 
