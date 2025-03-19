@@ -11,7 +11,7 @@ final class ContainerView: UIView {
     
     // MARK: - UI Components
     
-    private lazy var contentView: UIView = {
+    lazy var contentView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.systemGray6
         view.layer.cornerRadius = 12

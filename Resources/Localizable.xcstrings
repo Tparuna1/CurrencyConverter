@@ -22,6 +22,28 @@
           }
         }
       }
+    },
+    "currency.converter.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency Converter"
+          }
+        }
+      }
+    },
+    "last.five.conversions.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last 5 Conversions"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
