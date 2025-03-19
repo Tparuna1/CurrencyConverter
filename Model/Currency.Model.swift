@@ -7,6 +7,8 @@
 
 import Foundation
 
+// MARK: - CurrencyExchangeResponse Extensions
+
 extension CurrencyExchangeResponse {
     var amountAsDouble: Double? {
         return Double(amount)
