@@ -1,5 +1,5 @@
 //
-//  CurrencySelector.swift
+//  CurrencySelectorView.swift
 //  CurrencyConverter
 //
 //  Created by tornike <parunashvili on 19.03.25.
