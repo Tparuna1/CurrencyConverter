@@ -6,48 +6,71 @@
 //
 
 import UIKit
+import SnapKit
 
 final class ContainerView: UIView {
-    
-    // MARK: - UI Components
-    
-    lazy var contentView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.systemGray6
-        view.layer.cornerRadius = 12
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.1
-        view.layer.shadowOffset = CGSize(width: 0, height: 2)
-        view.layer.shadowRadius = 4
-        return view
-    }()
-    
-    // MARK: - Init
-    
-    init() {
-        super.init(frame: .zero)
-        setupUI()
+  
+  // MARK: - UI Components
+  
+  lazy var contentView: UIView = {
+    let view = UIView()
+    view.backgroundColor = UIColor.clear
+    view.layer.cornerRadius = 12
+    view.layer.shadowColor = UIColor.lightGray.cgColor
+    view.layer.shadowOpacity = 0.5
+    view.layer.shadowOffset = CGSize(width: 2, height: 4)
+    view.layer.borderWidth = 1.0
+    view.layer.borderColor = UIColor.navyBlue.cgColor
+    view.layer.shadowRadius = 4
+    return view
+  }()
+  
+  private let gradientLayer = CAGradientLayer()
+  
+  // MARK: - Init
+  
+  override init(frame: CGRect) {
+    super.init(frame: frame)
+    setupUI()
+  }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  
+  // MARK: - Public Methods
+  
+  func addContent(_ view: UIView) {
+    contentView.addSubview(view)
+    view.snp.makeConstraints { make in
+      make.edges.equalToSuperview().inset(16)
+    }
+  }
+  
+  // MARK: - Private Methods
+  
+  private func setupUI() {
+    addSubview(contentView)
+    contentView.snp.makeConstraints { make in
+      make.edges.equalToSuperview()
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    // MARK: - Public Methods
-    
-    func addContent(_ view: UIView) {
-        contentView.addSubview(view)
-        view.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(16)
-        }
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setupUI() {
-        addSubview(contentView)
-        contentView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-    }
+    applyGradient()
+  }
+  
+  private func applyGradient() {
+    gradientLayer.colors = [
+      UIColor(hex: "#5297F7").withAlphaComponent(0.6).cgColor,
+      UIColor(hex: "#000093").withAlphaComponent(0.6).cgColor
+    ]
+    gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+    gradientLayer.endPoint = CGPoint(x: 1, y: 1)
+    gradientLayer.cornerRadius = 12
+    contentView.layer.insertSublayer(gradientLayer, at: 0)
+  }
+  
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    gradientLayer.frame = contentView.bounds
+  }
 }
