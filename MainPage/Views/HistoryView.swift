@@ -63,14 +63,12 @@ final class HistoryView: UIView {
   func updateHistory(with history: [ConversionHistory]) {
     self.history = history
     
-    // Remove all history items but keep the title
     historyStackView.arrangedSubviews.forEach { view in
       if view != titleLabel {
         view.removeFromSuperview()
       }
     }
     
-    // Add new history items
     history.forEach { conversion in
       let historyLabel = UILabel()
       historyLabel.text = "\(conversion.fromAmount) \(conversion.fromCurrency.symbol) = \(conversion.toAmount) \(conversion.toCurrency.symbol)"
