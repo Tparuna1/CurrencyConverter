@@ -21,14 +21,14 @@ final class HistoryView: UIView {
   private lazy var historyStackView: UIStackView = {
     let stack = UIStackView()
     stack.axis = .vertical
-    stack.spacing = 8.0
+    stack.spacing = Grid.Spacing.xs
     return stack
   }()
   
   private lazy var titleLabel: UILabel = {
     let label = UILabel()
     label.text = "Last 5 Conversions"
-    label.font = .boldSystemFont(ofSize: 16)
+    label.font = .boldSystemFont(ofSize: Grid.FontSize.large)
     label.textColor = .white
     return label
   }()
@@ -72,7 +72,7 @@ final class HistoryView: UIView {
     history.forEach { conversion in
       let historyLabel = UILabel()
       historyLabel.text = "\(conversion.fromAmount) \(conversion.fromCurrency.symbol) = \(conversion.toAmount) \(conversion.toCurrency.symbol)"
-      historyLabel.font = .systemFont(ofSize: 14)
+      historyLabel.font = .systemFont(ofSize: Grid.FontSize.regular)
       historyLabel.textColor = .white
       historyStackView.addArrangedSubview(historyLabel)
     }

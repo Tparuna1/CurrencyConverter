@@ -23,8 +23,8 @@ final class ButtonComponent: UIView {
   private lazy var button: UIButton = {
     let button = UIButton(type: .system)
     button.setTitleColor(.white, for: .normal)
-    button.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
-    button.layer.cornerRadius = 8
+    button.titleLabel?.font = .systemFont(ofSize: Grid.FontSize.medium, weight: .semibold)
+    button.layer.cornerRadius = Grid.CornerRadius.small
     button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
     return button
   }()
@@ -53,7 +53,7 @@ final class ButtonComponent: UIView {
     addSubview(button)
     button.snp.makeConstraints { make in
       make.edges.equalToSuperview()
-      make.height.equalTo(50)
+      make.height.equalTo(Grid.Size.xl4)
     }
     
     configureForType()
@@ -67,10 +67,10 @@ final class ButtonComponent: UIView {
       button.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
       button.tintColor = .white
       button.backgroundColor = .lightBlue
-      button.layer.cornerRadius = 25
+      button.layer.cornerRadius = Grid.CornerRadius.large
       button.snp.remakeConstraints { make in
         make.center.equalToSuperview()
-        make.size.equalTo(50)
+        make.size.equalTo(Grid.Size.xl4)
       }
     }
   }

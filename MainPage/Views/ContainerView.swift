@@ -15,13 +15,14 @@ final class ContainerView: UIView {
   lazy var contentView: UIView = {
     let view = UIView()
     view.backgroundColor = UIColor.clear
-    view.layer.cornerRadius = 12
+    view.layer.cornerRadius = Grid.CornerRadius.medium
     view.layer.shadowColor = UIColor.lightGray.cgColor
-    view.layer.shadowOpacity = 0.5
-    view.layer.shadowOffset = CGSize(width: 2, height: 4)
-    view.layer.borderWidth = 1.0
+    view.layer.shadowOpacity = Float(Grid.Opacity.thin)
+    view.layer.shadowOffset = CGSize(width: Grid.Spacing.xs3,
+                                     height: Grid.Spacing.xs2)
+    view.layer.borderWidth = Grid.BorderWidth.thin
     view.layer.borderColor = UIColor.navyBlue.cgColor
-    view.layer.shadowRadius = 4
+    view.layer.shadowRadius = Grid.Spacing.xs2
     return view
   }()
   
@@ -43,7 +44,7 @@ final class ContainerView: UIView {
   func addContent(_ view: UIView) {
     contentView.addSubview(view)
     view.snp.makeConstraints { make in
-      make.edges.equalToSuperview().inset(16)
+      make.edges.equalToSuperview().inset(Grid.Spacing.m)
     }
   }
   
@@ -64,8 +65,8 @@ final class ContainerView: UIView {
       UIColor(hex: "#000093").withAlphaComponent(0.6).cgColor
     ]
     gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-    gradientLayer.endPoint = CGPoint(x: 1, y: 1)
-    gradientLayer.cornerRadius = 12
+    gradientLayer.endPoint = CGPoint(x: Grid.Spacing.xs4, y: Grid.Spacing.xs4)
+    gradientLayer.cornerRadius = Grid.CornerRadius.medium
     contentView.layer.insertSublayer(gradientLayer, at: 0)
   }
   
