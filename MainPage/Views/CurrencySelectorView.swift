@@ -1,5 +1,5 @@
 //
-//  CurrencySelector.swift
+//  CurrencySelectorView.swift
 //  CurrencyConverter
 //
 //  Created by tornike <parunashvili on 17.03.25.
@@ -8,7 +8,7 @@
 import UIKit
 import Combine
 
-final class CurrencySelector: UIView {
+final class CurrencySelectorView: UIView {
   
   // MARK: - Properties
   
@@ -140,6 +140,12 @@ final class CurrencySelector: UIView {
     
     let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
     alertController.addAction(cancelAction)
+    
+    /// Configure popover for iPad
+    if let popoverController = alertController.popoverPresentationController {
+      popoverController.sourceView = self
+      popoverController.sourceRect = bounds
+    }
     
     /// Find the view controller to present the alert
     if let viewController = findViewController() {

@@ -21,13 +21,13 @@ final class ConverterView: UIView {
   private lazy var selectorsContainer = ContainerView()
   private lazy var fieldsContainer = ContainerView()
   
-  private lazy var fromCurrencySelector: CurrencySelector = {
-    let selector = CurrencySelector(currencies: Currency.allCases, selectedCurrency: viewModel.fromCurrency)
+  private lazy var fromCurrencySelector: CurrencySelectorView = {
+    let selector = CurrencySelectorView(currencies: Currency.allCases, selectedCurrency: viewModel.fromCurrency)
     return selector
   }()
   
-  private lazy var toCurrencySelector: CurrencySelector = {
-    let selector = CurrencySelector(currencies: Currency.allCases, selectedCurrency: viewModel.toCurrency)
+  private lazy var toCurrencySelector: CurrencySelectorView = {
+    let selector = CurrencySelectorView(currencies: Currency.allCases, selectedCurrency: viewModel.toCurrency)
     return selector
   }()
   
