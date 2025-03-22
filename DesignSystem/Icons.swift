@@ -8,5 +8,5 @@
 import UIKit
 
 extension UIImage {
-  static let chevronDown = UIImage(named: "chevron.down")
+  static let chevronDown = UIImage(systemName: "chevron.down")
 }
