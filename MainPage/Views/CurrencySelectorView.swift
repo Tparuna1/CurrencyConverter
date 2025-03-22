@@ -141,6 +141,12 @@ final class CurrencySelector: UIView {
     let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
     alertController.addAction(cancelAction)
     
+    /// Configure popover for iPad
+    if let popoverController = alertController.popoverPresentationController {
+      popoverController.sourceView = self
+      popoverController.sourceRect = bounds
+    }
+    
     /// Find the view controller to present the alert
     if let viewController = findViewController() {
       viewController.present(alertController, animated: true)
