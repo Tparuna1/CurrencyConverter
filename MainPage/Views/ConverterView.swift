@@ -44,11 +44,31 @@ final class ConverterView: UIView {
     return label
   }()
   
+  private lazy var activityIndicator: UIActivityIndicatorView = {
+    let indicator = UIActivityIndicatorView(style: .medium)
+    indicator.hidesWhenStopped = true
+    return indicator
+  }()
+  
   private lazy var converterStackView: UIStackView = {
     let stack = UIStackView()
     stack.axis = .vertical
     stack.spacing = Grid.Spacing.xl
     stack.alignment = .fill
+    return stack
+  }()
+  
+  private lazy var selectorsStackView: UIStackView = {
+    let stack = UIStackView(arrangedSubviews: [fromCurrencySelector, toCurrencySelector])
+    stack.axis = .vertical
+    stack.spacing = Grid.Spacing.xs
+    return stack
+  }()
+  
+  private lazy var fieldsStackView: UIStackView = {
+    let stack = UIStackView(arrangedSubviews: [fromCurrencyField, toCurrencyField])
+    stack.axis = .vertical
+    stack.spacing = Grid.Spacing.m
     return stack
   }()
   
@@ -77,16 +97,8 @@ final class ConverterView: UIView {
   }
   
   private func addSubviews() {
-    let selectorsStackView = UIStackView(arrangedSubviews: [fromCurrencySelector, toCurrencySelector])
-    selectorsStackView.axis = .vertical
-    selectorsStackView.spacing = Grid.Spacing.xs
     selectorsContainer.addContent(selectorsStackView)
-    
-    let fieldsStackView = UIStackView(arrangedSubviews: [fromCurrencyField, toCurrencyField])
-    fieldsStackView.axis = .vertical
-    fieldsStackView.spacing = Grid.Spacing.m
     fieldsContainer.addContent(fieldsStackView)
-    
     fieldsContainer.contentView.addSubview(reverseButton)
     
     converterStackView.addArrangedSubviews([
@@ -94,7 +106,7 @@ final class ConverterView: UIView {
       fieldsContainer,
       exchangeRateLabel,
     ])
-    
+    addSubview(activityIndicator)
     addSubview(converterStackView)
   }
   
@@ -107,6 +119,11 @@ final class ConverterView: UIView {
       make.centerX.equalToSuperview()
       make.centerY.equalTo(fieldsContainer.contentView)
       make.size.equalTo(Grid.Size.xl4)
+    }
+    
+    activityIndicator.snp.makeConstraints { make in
+      make.center.equalTo(exchangeRateLabel)
+      make.width.height.equalTo(Grid.Size.xl3)
     }
   }
   
@@ -132,6 +149,20 @@ final class ConverterView: UIView {
       .dispatchOnMainQueue()
       .sink { [weak self] value in
         self?.toCurrencyField.text = value
+      }
+      .store(in: &cancellables)
+    
+    /// Bind the loading state to the activity indicator
+    viewModel.$isLoading
+      .dispatchOnMainQueue()
+      .sink { [weak self] isLoading in
+        if isLoading {
+          self?.activityIndicator.startAnimating()
+          self?.exchangeRateLabel.isHidden = true
+        } else {
+          self?.activityIndicator.stopAnimating()
+          self?.exchangeRateLabel.isHidden = false
+        }
       }
       .store(in: &cancellables)
     
