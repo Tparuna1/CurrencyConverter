@@ -52,6 +52,9 @@ public enum Grid {
     public static let thin: CGFloat = 0.5
   }
   
+  public enum Height {
+    public static let container: CGFloat = 300
+  }
   
   public enum CornerRadius {
     public static let small: CGFloat = 8.0

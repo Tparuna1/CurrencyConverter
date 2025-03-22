@@ -41,13 +41,13 @@ final class CurrencyConverterViewController: UIViewController {
   }
   
   private func setupKeyboardDismissal() {
-      let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-      tapGesture.cancelsTouchesInView = false
-      view.addGestureRecognizer(tapGesture)
+    let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+    tapGesture.cancelsTouchesInView = false
+    view.addGestureRecognizer(tapGesture)
   }
-
+  
   @objc private func dismissKeyboard() {
-      view.endEditing(true)
+    view.endEditing(true)
   }
   
   private func addSubviews() {
@@ -64,6 +64,7 @@ final class CurrencyConverterViewController: UIViewController {
     historyView.snp.makeConstraints { make in
       make.top.equalTo(converterView.snp.bottom).offset(Grid.Spacing.l)
       make.leading.trailing.equalToSuperview().inset(Grid.Spacing.l)
+      make.height.equalTo(Grid.Height.container)
       make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(Grid.Spacing.l)
     }
   }
@@ -88,7 +89,7 @@ final class CurrencyConverterViewController: UIViewController {
       }
       .store(in: &cancellables)
   }
-
+  
   // MARK: - Error Handling
   
   private func showError(_ message: String) {
