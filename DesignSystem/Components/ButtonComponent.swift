@@ -67,7 +67,7 @@ final class ButtonComponent: UIView {
       button.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
       button.tintColor = .white
       button.backgroundColor = .lightBlue
-      button.layer.cornerRadius = 25
+      button.layer.cornerRadius = 24
       button.snp.remakeConstraints { make in
         make.center.equalToSuperview()
         make.size.equalTo(50)

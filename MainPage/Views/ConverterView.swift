@@ -38,7 +38,7 @@ final class ConverterView: UIView {
   
   private lazy var exchangeRateLabel: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: 14)
+    label.font = .systemFont(ofSize: Grid.FontSize.regular)
     label.textColor = .gray
     label.textAlignment = .center
     return label
@@ -47,7 +47,7 @@ final class ConverterView: UIView {
   private lazy var converterStackView: UIStackView = {
     let stack = UIStackView()
     stack.axis = .vertical
-    stack.spacing = 24.0
+    stack.spacing = Grid.Spacing.xl
     stack.alignment = .fill
     return stack
   }()
@@ -79,12 +79,12 @@ final class ConverterView: UIView {
   private func addSubviews() {
     let selectorsStackView = UIStackView(arrangedSubviews: [fromCurrencySelector, toCurrencySelector])
     selectorsStackView.axis = .vertical
-    selectorsStackView.spacing = 8
+    selectorsStackView.spacing = Grid.Spacing.xs
     selectorsContainer.addContent(selectorsStackView)
     
     let fieldsStackView = UIStackView(arrangedSubviews: [fromCurrencyField, toCurrencyField])
     fieldsStackView.axis = .vertical
-    fieldsStackView.spacing = 16
+    fieldsStackView.spacing = Grid.Spacing.m
     fieldsContainer.addContent(fieldsStackView)
     
     fieldsContainer.contentView.addSubview(reverseButton)
@@ -106,7 +106,7 @@ final class ConverterView: UIView {
     reverseButton.snp.makeConstraints { make in
       make.centerX.equalToSuperview()
       make.centerY.equalTo(fieldsContainer.contentView)
-      make.size.equalTo(50)
+      make.size.equalTo(Grid.Size.xl4)
     }
   }
   

@@ -46,14 +46,14 @@ final class CurrencyConverterViewController: UIViewController {
   
   private func makeConstraints() {
     converterView.snp.makeConstraints { make in
-      make.top.equalTo(view.safeAreaLayoutGuide).offset(20)
-      make.leading.trailing.equalToSuperview().inset(20)
+      make.top.equalTo(view.safeAreaLayoutGuide).offset(Grid.Spacing.l)
+      make.leading.trailing.equalToSuperview().inset(Grid.Spacing.l)
     }
     
     historyView.snp.makeConstraints { make in
-      make.top.equalTo(converterView.snp.bottom).offset(20)
-      make.leading.trailing.equalToSuperview().inset(20)
-      make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(20)
+      make.top.equalTo(converterView.snp.bottom).offset(Grid.Spacing.l)
+      make.leading.trailing.equalToSuperview().inset(Grid.Spacing.l)
+      make.bottom.lessThanOrEqualTo(view.safeAreaLayoutGuide).inset(Grid.Spacing.l)
     }
   }
   

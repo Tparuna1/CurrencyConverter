@@ -32,15 +32,18 @@ final class CurrencySelector: UIView {
     stack.spacing = 8
     stack.alignment = .center
     stack.isLayoutMarginsRelativeArrangement = true
-    stack.layoutMargins = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
+    stack.layoutMargins = UIEdgeInsets(top: Grid.Spacing.xs,
+                                       left: Grid.Spacing.s,
+                                       bottom: Grid.Spacing.xs,
+                                       right: Grid.Spacing.s)
     stack.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
-    stack.layer.cornerRadius = 8
+    stack.layer.cornerRadius = Grid.CornerRadius.small
     return stack
   }()
   
   private lazy var currencySymbolLabel: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: 18, weight: .bold)
+    label.font = .systemFont(ofSize: Grid.FontSize.large, weight: .bold)
     label.textColor = .black
     label.textAlignment = .center
     label.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -49,14 +52,14 @@ final class CurrencySelector: UIView {
   
   private lazy var currencyCodeLabel: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: 16)
+    label.font = .systemFont(ofSize: Grid.FontSize.large)
     label.textColor = .darkGray
     label.textAlignment = .left
     return label
   }()
   
   private lazy var arrowImageView: UIImageView = {
-    let configuration = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+    let configuration = UIImage.SymbolConfiguration(pointSize: Grid.Spacing.s, weight: .medium)
     let image = UIImage(systemName: "chevron.down", withConfiguration: configuration)
     let imageView = UIImageView(image: image)
     imageView.tintColor = .darkGray
