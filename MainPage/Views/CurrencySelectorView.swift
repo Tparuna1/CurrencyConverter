@@ -1,71 +1,85 @@
 //
-//  CurrencySelectorView.swift
+//  CurrencySelector.swift
 //  CurrencyConverter
 //
-//  Created by tornike <parunashvili on 19.03.25.
+//  Created by tornike <parunashvili on 17.03.25.
 //
 
 import UIKit
 import Combine
 
 final class CurrencySelector: UIView {
+  
   // MARK: - Properties
   
-  private(set) var selectedCurrency: Currency {
-    didSet {
-      currencyChangeSubject.send(selectedCurrency)
-      updateSelectionDisplay()
-    }
-  }
-  
   private let currencies: [Currency]
-  private let currencyChangeSubject = PassthroughSubject<Currency, Never>()
+  private var selectedCurrency: Currency
+  private let currencySubject = PassthroughSubject<Currency, Never>()
+  
   var currencyPublisher: AnyPublisher<Currency, Never> {
-    return currencyChangeSubject.eraseToAnyPublisher()
+    return currencySubject.eraseToAnyPublisher()
   }
   
   // MARK: - UI Components
   
-  private lazy var containerStack: UIStackView = {
-    let stack = UIStackView()
-    stack.axis = .horizontal
-    stack.spacing = 8
-    stack.alignment = .center
-    stack.isLayoutMarginsRelativeArrangement = true
-    stack.layoutMargins = UIEdgeInsets(top: Grid.Spacing.xs,
-                                       left: Grid.Spacing.s,
-                                       bottom: Grid.Spacing.xs,
-                                       right: Grid.Spacing.s)
-    stack.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
-    stack.layer.cornerRadius = Grid.CornerRadius.small
-    return stack
+  private lazy var containerView: UIView = {
+    let view = UIView()
+    view.backgroundColor = .clear
+    return view
   }()
   
-  private lazy var currencySymbolLabel: UILabel = {
-    let label = UILabel()
-    label.font = .systemFont(ofSize: Grid.FontSize.large, weight: .bold)
-    label.textColor = .black
-    label.textAlignment = .center
-    label.setContentHuggingPriority(.defaultHigh, for: .horizontal)
-    return label
+  private lazy var flagView: CurrencyFlagView = {
+    return CurrencyFlagView(currency: selectedCurrency, size: Grid.Spacing.xl)
   }()
   
-  private lazy var currencyCodeLabel: UILabel = {
+  private lazy var currencyLabel: UILabel = {
     let label = UILabel()
-    label.font = .systemFont(ofSize: Grid.FontSize.large)
-    label.textColor = .darkGray
+    label.font = .systemFont(ofSize: Grid.FontSize.regular)
+    label.textColor = .white
     label.textAlignment = .left
     return label
   }()
   
+  private lazy var codeLabel: UILabel = {
+    let label = UILabel()
+    label.font = .systemFont(ofSize: Grid.FontSize.small)
+    label.textColor = .lightGray
+    label.textAlignment = .right
+    return label
+  }()
+  
   private lazy var arrowImageView: UIImageView = {
-    let configuration = UIImage.SymbolConfiguration(pointSize: Grid.Spacing.s, weight: .medium)
-    let image = UIImage.chevronDown?.withConfiguration(configuration)
-    let imageView = UIImageView(image: image)
-    imageView.tintColor = .darkGray
+    let imageView = UIImageView(image: UIImage.chevronDown)
+    imageView.tintColor = .white
     imageView.contentMode = .scaleAspectFit
-    imageView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     return imageView
+  }()
+  
+  private lazy var spacerView: UIView = {
+    let view = UIView()
+    return view
+  }()
+  
+  // MARK: - Stack Views
+  
+  private lazy var centerStack: UIStackView = {
+    let stack = UIStackView(arrangedSubviews: [currencyLabel, codeLabel])
+    stack.axis = .vertical
+    stack.spacing = Grid.Spacing.xs2
+    stack.alignment = .leading
+    return stack
+  }()
+  
+  private lazy var horizontalStack: UIStackView = {
+    let stack = UIStackView()
+    stack.axis = .horizontal
+    stack.spacing = Grid.Spacing.m
+    stack.alignment = .center
+    stack.addArrangedSubview(flagView)
+    stack.addArrangedSubview(centerStack)
+    stack.addArrangedSubview(spacerView)
+    stack.addArrangedSubview(arrowImageView)
+    return stack
   }()
   
   // MARK: - Initialization
@@ -74,77 +88,65 @@ final class CurrencySelector: UIView {
     self.currencies = currencies
     self.selectedCurrency = selectedCurrency
     super.init(frame: .zero)
-    setupView()
+    setupUI()
+    updateLabels()
+    setupActions()
   }
   
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
   }
   
-  // MARK: - Setup
+  // MARK: - Private Methods
   
-  private func setupView() {
-    addSubview(containerStack)
+  private func setupUI() {
+    addSubview(horizontalStack)
     
-    containerStack.addArrangedSubview(currencySymbolLabel)
-    containerStack.addArrangedSubview(currencyCodeLabel)
-    containerStack.addArrangedSubview(arrowImageView)
-    
-    containerStack.snp.makeConstraints { make in
-      make.edges.equalToSuperview()
+    horizontalStack.snp.makeConstraints { make in
+      make.edges.equalToSuperview().inset(Grid.Spacing.m)
     }
     
-    updateSelectionDisplay()
+    spacerView.snp.makeConstraints { make in
+      make.width.greaterThanOrEqualTo(Grid.Spacing.m)
+    }
     
+    arrowImageView.snp.makeConstraints { make in
+      make.width.height.equalTo(Grid.Size.m)
+    }
+  }
+  
+  private func updateLabels() {
+    flagView.updateCurrency(selectedCurrency)
+    currencyLabel.text = selectedCurrency.name
+    codeLabel.text = selectedCurrency.code
+  }
+  
+  private func setupActions() {
     let tapGesture = UITapGestureRecognizer(target: self, action: #selector(showCurrencyPicker))
-    containerStack.addGestureRecognizer(tapGesture)
-    containerStack.isUserInteractionEnabled = true
+    addGestureRecognizer(tapGesture)
   }
-  
-  private func updateSelectionDisplay() {
-    currencySymbolLabel.text = selectedCurrency.symbol
-    currencyCodeLabel.text = selectedCurrency.code
-  }
-  
-  // MARK: - Actions
   
   @objc private func showCurrencyPicker() {
-    let alertController = UIAlertController(
-      title: "Select Currency",
-      message: nil,
-      preferredStyle: .actionSheet
-    )
+    let alertController = UIAlertController(title: "Select Currency", message: nil, preferredStyle: .actionSheet)
     
     for currency in currencies {
-      let action = UIAlertAction(
-        title: "\(currency.symbol) \(currency.code) - \(currency.name)",
-        style: .default
-      ) { [weak self] _ in
+      let action = UIAlertAction(title: "\(currency.name) (\(currency.code))", style: .default) { [weak self] _ in
         self?.selectedCurrency = currency
+        self?.updateLabels()
+        self?.currencySubject.send(currency)
       }
-      
-      if currency == selectedCurrency {
-        /// Add a checkmark to the current selection
-        action.setValue(true, forKey: "checked")
-      }
-      
       alertController.addAction(action)
     }
     
-    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+    let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+    alertController.addAction(cancelAction)
     
-    /// Present from the top-most view controller
+    /// Find the view controller to present the alert
     if let viewController = findViewController() {
-      if UIDevice.current.userInterfaceIdiom == .pad {
-        /// For iPad, we need to specify a source view for the popover
-        alertController.popoverPresentationController?.sourceView = self
-        alertController.popoverPresentationController?.sourceRect = bounds
-      }
       viewController.present(alertController, animated: true)
     }
   }
   
-  /// Helper to find the view controller that contains this view
   private func findViewController() -> UIViewController? {
     var responder: UIResponder? = self
     while let nextResponder = responder?.next {

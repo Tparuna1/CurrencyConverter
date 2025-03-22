@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 enum Currency: String, Codable, CaseIterable {
   case euro = "EUR"
@@ -27,6 +28,19 @@ enum Currency: String, Codable, CaseIterable {
     case .aud: return "A$"
     case .chf: return "Fr"
     case .cny: return "¥"
+    }
+  }
+  
+  var flagImage: UIImage? {
+    switch self {
+    case .euro: return .iconEUR
+    case .usd: return .iconUSD
+    case .gbp: return .iconGBP
+    case .jpy: return .iconJPY
+    case .cad: return .iconCAD
+    case .aud: return .iconAUD
+    case .chf: return .iconCHF
+    case .cny: return .iconCNY
     }
   }
   
