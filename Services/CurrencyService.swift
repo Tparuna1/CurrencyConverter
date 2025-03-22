@@ -8,56 +8,6 @@
 import Combine
 import Foundation
 
-// MARK: - Errors
-
-enum CurrencyServiceError: Error, LocalizedError {
-  case invalidURL
-  case decodingError(String)
-  case networkError(Error)
-  case taskCancelled
-  
-  var errorDescription: String? {
-    switch self {
-    case .invalidURL:
-      return "Invalid URL format"
-    case .decodingError(let message):
-      return "Failed to decode response: \(message)"
-    case .networkError(let error):
-      return "Network error: \(error.localizedDescription)"
-    case .taskCancelled:
-      return "Request was cancelled"
-    }
-  }
-}
-
-// MARK: - Models
-
-struct CurrencyExchangeResponse: Decodable {
-  let amount: String
-  let currency: Currency
-}
-
-// MARK: - Cache Key
-
-struct ExchangeRateCacheKey: Hashable {
-  let fromCurrency: Currency
-  let toCurrency: Currency
-  let amount: Double
-  
-  func hash(into hasher: inout Hasher) {
-    hasher.combine(fromCurrency.rawValue)
-    hasher.combine(toCurrency.rawValue)
-    hasher.combine(amount)
-  }
-}
-
-// MARK: - Cache Value
-
-struct ExchangeRateCacheValue {
-  let rate: Double
-  let timestamp: Date
-}
-
 // MARK: - Service Protocol
 
 protocol CurrencyServiceProtocol {
@@ -79,7 +29,7 @@ final class CurrencyService: CurrencyServiceProtocol {
   
   /// Cache for exchange rates with expiration time
   private var cache: [ExchangeRateCacheKey: ExchangeRateCacheValue] = [:]
-  private let cacheDuration: TimeInterval = 30 // 30 seconds cache validity
+  private let cacheDuration: TimeInterval = 30
   
   // MARK: - Initialization
   init(baseURL: String = "http://api.evp.lt/currency/commercial",
@@ -167,7 +117,6 @@ final class CurrencyService: CurrencyServiceProtocol {
         if let httpResponse = response as? HTTPURLResponse {
           log("🌐 HTTP Response: \(httpResponse.statusCode)")
           
-          // Handle non-success status codes
           guard (200...299).contains(httpResponse.statusCode) else {
             throw CurrencyServiceError.networkError(
               NSError(domain: "HTTP", code: httpResponse.statusCode, userInfo: nil)

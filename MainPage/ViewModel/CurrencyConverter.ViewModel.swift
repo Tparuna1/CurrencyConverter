@@ -86,9 +86,11 @@ final class CurrencyConverterViewModel: ObservableObject {
   }
   
   func fetchExchangeRate(forceRefresh: Bool = false) async {
+    isLoading = true
+    errorMessage = nil
     /// Skip if currencies are the same
     if fromCurrency == toCurrency {
-      exchangeRate = "1.0000"
+      exchangeRate = "1.00"
       await convert()
       return
     }

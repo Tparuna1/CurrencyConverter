@@ -7,6 +7,13 @@
 
 import Foundation
 
+// MARK: - Models
+
+struct CurrencyExchangeResponse: Decodable {
+  let amount: String
+  let currency: Currency
+}
+
 // MARK: - CurrencyExchangeResponse Extensions
 
 extension CurrencyExchangeResponse {
