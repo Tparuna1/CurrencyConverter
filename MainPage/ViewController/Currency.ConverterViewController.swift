@@ -27,6 +27,7 @@ final class CurrencyConverterViewController: UIViewController {
     super.viewDidLoad()
     setupUI()
     setupBindings()
+    setupKeyboardDismissal()
   }
   
   // MARK: - Private Methods
@@ -37,6 +38,16 @@ final class CurrencyConverterViewController: UIViewController {
     
     addSubviews()
     makeConstraints()
+  }
+  
+  private func setupKeyboardDismissal() {
+      let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+      tapGesture.cancelsTouchesInView = false
+      view.addGestureRecognizer(tapGesture)
+  }
+
+  @objc private func dismissKeyboard() {
+      view.endEditing(true)
   }
   
   private func addSubviews() {
@@ -77,7 +88,7 @@ final class CurrencyConverterViewController: UIViewController {
       }
       .store(in: &cancellables)
   }
-  
+
   // MARK: - Error Handling
   
   private func showError(_ message: String) {
