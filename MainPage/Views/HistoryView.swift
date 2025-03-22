@@ -9,72 +9,78 @@ import UIKit
 import SnapKit
 
 final class HistoryView: UIView {
-  
-  // MARK: - Properties
-  
-  private var history: [ConversionHistory] = []
-  
-  // MARK: - UI Components
-  
-  private lazy var containerView = ContainerView()
-  
-  private lazy var historyStackView: UIStackView = {
-    let stack = UIStackView()
-    stack.axis = .vertical
-    stack.spacing = Grid.Spacing.xs
-    return stack
-  }()
-  
-  private lazy var titleLabel: UILabel = {
-    let label = UILabel()
-    label.text = "Last 5 Conversions"
-    label.font = .boldSystemFont(ofSize: Grid.FontSize.large)
-    label.textColor = .white
-    return label
-  }()
-  
-  // MARK: - Initialization
-  
-  override init(frame: CGRect) {
-    super.init(frame: frame)
-    setupUI()
-  }
-  
-  required init?(coder: NSCoder) {
-    super.init(coder: coder)
-    setupUI()
-  }
-  
-  // MARK: - Private Methods
-  
-  private func setupUI() {
-    containerView.addContent(historyStackView)
-    historyStackView.addArrangedSubview(titleLabel)
     
-    addSubview(containerView)
+    // MARK: - Properties
     
-    containerView.snp.makeConstraints { make in
-      make.edges.equalToSuperview()
-    }
-  }
-  
-  // MARK: - Public Methods
-  
-  func updateHistory(with history: [ConversionHistory]) {
-    self.history = history
+    private var history: [ConversionHistory] = []
     
-    historyStackView.arrangedSubviews.forEach { view in
-      if view != titleLabel {
-        view.removeFromSuperview()
-      }
+    // MARK: - UI Components
+    
+    private lazy var containerView = ContainerView()
+    
+    private lazy var historyStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = Grid.Spacing.xs
+        return stack
+    }()
+    
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Last 5 Conversions"
+        label.font = .boldSystemFont(ofSize: Grid.FontSize.large)
+        label.textColor = .white
+        return label
+    }()
+    
+    // MARK: - Initialization
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
     }
     
-    history.forEach { conversion in
-      let historyLabel = UILabel()
-      historyLabel.text = "\(conversion.fromAmount) \(conversion.fromCurrency.symbol) = \(conversion.toAmount) \(conversion.toCurrency.symbol)"
-      historyLabel.font = .systemFont(ofSize: Grid.FontSize.regular)
-      historyLabel.textColor = .white
-      historyStackView.addArrangedSubview(historyLabel)
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupUI()
     }
-  }
+    
+    // MARK: - Private Methods
+    
+    private func setupUI() {
+        containerView.addContent(historyStackView)
+        historyStackView.addArrangedSubview(titleLabel)
+        
+        addSubview(containerView)
+        
+        containerView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+    }
+    
+    // MARK: - Public Methods
+    
+    func updateHistory(with history: [ConversionHistory]) {
+        self.history = history
+        
+        historyStackView.arrangedSubviews.forEach { view in
+            if view != titleLabel {
+                view.removeFromSuperview()
+            }
+        }
+        
+        if history.isEmpty {
+            let emptyLabel = UILabel()
+            emptyLabel.text = "No conversions yet"
+            emptyLabel.font = .systemFont(ofSize: Grid.FontSize.regular)
+            emptyLabel.textColor = .white
+            emptyLabel.textAlignment = .center
+            historyStackView.addArrangedSubview(emptyLabel)
+        } else {
+            history.forEach { conversion in
+                let historyCell = HistoryCell(conversion: conversion)
+                historyStackView.addArrangedSubview(historyCell)
+            }
+        }
+    }
 }
