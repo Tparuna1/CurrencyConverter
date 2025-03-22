@@ -65,8 +65,8 @@ final class ContainerView: UIView {
       UIColor(hex: "#000093").withAlphaComponent(0.6).cgColor
     ]
     gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-    gradientLayer.endPoint = CGPoint(x: 1, y: 1)
-    gradientLayer.cornerRadius = 12
+    gradientLayer.endPoint = CGPoint(x: Grid.Spacing.xs4, y: Grid.Spacing.xs4)
+    gradientLayer.cornerRadius = Grid.CornerRadius.medium
     contentView.layer.insertSublayer(gradientLayer, at: 0)
   }
   

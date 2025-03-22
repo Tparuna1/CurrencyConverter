@@ -60,7 +60,7 @@ final class CurrencySelector: UIView {
   
   private lazy var arrowImageView: UIImageView = {
     let configuration = UIImage.SymbolConfiguration(pointSize: Grid.Spacing.s, weight: .medium)
-    let image = UIImage(systemName: "chevron.down", withConfiguration: configuration)
+    let image = UIImage.chevronDown?.withConfiguration(configuration)
     let imageView = UIImageView(image: image)
     imageView.tintColor = .darkGray
     imageView.contentMode = .scaleAspectFit

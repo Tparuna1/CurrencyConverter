@@ -38,8 +38,8 @@ final class CurrencyTextField: UIView {
     let view = UIView()
     view.backgroundColor = .white
     view.layer.borderColor = UIColor.lightGreen.cgColor
-    view.layer.borderWidth = 1.0
-    view.layer.cornerRadius = 8.0
+    view.layer.borderWidth = Grid.BorderWidth.thin
+    view.layer.cornerRadius = Grid.CornerRadius.small
     return view
   }()
   
@@ -48,14 +48,14 @@ final class CurrencyTextField: UIView {
     field.borderStyle = .none
     field.keyboardType = .decimalPad
     field.textAlignment = .left
-    field.font = .systemFont(ofSize: 16)
+    field.font = .systemFont(ofSize: Grid.FontSize.medium)
     field.textColor = .black
     return field
   }()
   
   private lazy var currencyLabel: UILabel = {
     let label = UILabel(
-      font: .systemFont(ofSize: 16, weight: .semibold),
+      font: .systemFont(ofSize: Grid.FontSize.medium, weight: .semibold),
       textColor: .black
     )
     label.textAlignment = .center
@@ -100,19 +100,19 @@ final class CurrencyTextField: UIView {
   private func makeConstraints() {
     containerView.snp.makeConstraints { make in
       make.edges.equalToSuperview()
-      make.height.equalTo(50)
+      make.height.equalTo(Grid.Size.xl4)
     }
     
     textField.snp.makeConstraints { make in
       make.top.bottom.equalToSuperview()
-      make.leading.equalToSuperview().offset(16)
-      make.trailing.equalTo(currencyLabel.snp.leading).offset(-8)
+      make.leading.equalToSuperview().offset(Grid.Spacing.m)
+      make.trailing.equalTo(currencyLabel.snp.leading).offset(-Grid.Spacing.xs)
     }
     
     currencyLabel.snp.makeConstraints { make in
       make.top.bottom.equalToSuperview()
-      make.trailing.equalToSuperview().inset(16)
-      make.width.equalTo(30)
+      make.trailing.equalToSuperview().inset(Grid.Spacing.m)
+      make.width.equalTo(Grid.Size.xl3)
     }
   }
   
