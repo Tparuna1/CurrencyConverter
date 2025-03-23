@@ -31,6 +31,9 @@ final class CurrencyService: CurrencyServiceProtocol {
   private var cache: [ExchangeRateCacheKey: ExchangeRateCacheValue] = [:]
   private let cacheDuration: TimeInterval = 30
   
+  /// Add a serial queue for task cancellation
+  private let serialQueue = DispatchQueue(label: "com.currencyconverter.taskQueue")
+  
   // MARK: - Initialization
   init(baseURL: String = "http://api.evp.lt/currency/commercial",
        endpoint: String = "exchange",
@@ -71,9 +74,12 @@ final class CurrencyService: CurrencyServiceProtocol {
   // MARK: - Cancellation
   
   func cancelOngoingRequests() {
-    self.currentTask?.cancel()
-    self.currentTask = nil
-    log("🛑 Cancelled ongoing currency exchange requests")
+    /// Use the serial queue to prevent race conditions during cancellation
+    serialQueue.sync {
+      self.currentTask?.cancel()
+      self.currentTask = nil
+      log("🛑 Cancelled ongoing currency exchange requests")
+    }
   }
   
   // MARK: - API Methods
@@ -97,77 +103,97 @@ final class CurrencyService: CurrencyServiceProtocol {
       return cachedRate
     }
     
-    /// Cancel any existing task
-    cancelOngoingRequests()
-    
-    /// Create and store a new task
-    let task = Task<Double, Error> {
-      let urlString = "\(baseURL)/\(endpoint)/\(fromAmount)-\(fromCurrency.code)/\(toCurrency.code)/latest"
-      
-      log("📡 Fetching exchange rate from: \(urlString)")
-      
-      guard let url = URL(string: urlString) else {
-        log("❌ Invalid URL: \(urlString)")
-        throw CurrencyServiceError.invalidURL
-      }
-      
-      do {
-        let (data, response) = try await URLSession.shared.data(from: url)
+    /// Use the serial queue for task cancellation and creation
+    return try await withCheckedThrowingContinuation { continuation in
+      serialQueue.async {
+        /// Cancel any existing task
+        self.currentTask?.cancel()
+        self.currentTask = nil
         
-        if let httpResponse = response as? HTTPURLResponse {
-          log("🌐 HTTP Response: \(httpResponse.statusCode)")
+        /// Create a new task
+        let task = Task<Double, Error> {
+          let urlString = "\(self.baseURL)/\(self.endpoint)/\(fromAmount)-\(fromCurrency.code)/\(toCurrency.code)/latest"
           
-          guard (200...299).contains(httpResponse.statusCode) else {
-            throw CurrencyServiceError.networkError(
-              NSError(domain: "HTTP", code: httpResponse.statusCode, userInfo: nil)
-            )
+          self.log("📡 Fetching exchange rate from: \(urlString)")
+          
+          guard let url = URL(string: urlString) else {
+            self.log("❌ Invalid URL: \(urlString)")
+            throw CurrencyServiceError.invalidURL
+          }
+          
+          do {
+            /// Add a small delay to prevent rapid consecutive requests
+            try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+            
+            if Task.isCancelled {
+              self.log("🛑 Task was cancelled before network request")
+              throw CurrencyServiceError.taskCancelled
+            }
+            
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            if Task.isCancelled {
+              self.log("🛑 Task was cancelled after network request")
+              throw CurrencyServiceError.taskCancelled
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse {
+              self.log("🌐 HTTP Response: \(httpResponse.statusCode)")
+              
+              guard (200...299).contains(httpResponse.statusCode) else {
+                throw CurrencyServiceError.networkError(
+                  NSError(domain: "HTTP", code: httpResponse.statusCode, userInfo: nil)
+                )
+              }
+            }
+            
+            if self.isLoggingEnabled, let jsonString = String(data: data, encoding: .utf8) {
+              self.log("✅ Raw API Response: \(jsonString)")
+            }
+            
+            let decoder = JSONDecoder()
+            
+            do {
+              let response = try decoder.decode(CurrencyExchangeResponse.self, from: data)
+              
+              guard let amount = response.amountAsDouble else {
+                throw CurrencyServiceError.decodingError("Failed to convert amount '\(response.amount)' to Double")
+              }
+              
+              /// Calculate and cache the exchange rate
+              let rate = amount / fromAmount
+              self.cacheRate(rate, for: cacheKey)
+              
+              self.log("🔄 Exchange Rate: \(rate) \(toCurrency.code)/\(fromCurrency.code)")
+              return amount
+            } catch {
+              self.log("❌ Decoding Error: \(error.localizedDescription)")
+              throw CurrencyServiceError.decodingError(error.localizedDescription)
+            }
+          } catch let error as CurrencyServiceError {
+            throw error
+          } catch {
+            if Task.isCancelled {
+              self.log("🛑 Task was cancelled")
+              throw CurrencyServiceError.taskCancelled
+            }
+            self.log("❌ Network Error: \(error.localizedDescription)")
+            throw CurrencyServiceError.networkError(error)
           }
         }
         
-        if isLoggingEnabled, let jsonString = String(data: data, encoding: .utf8) {
-          log("✅ Raw API Response: \(jsonString)")
-        }
+        /// Store the task and set up continuation
+        self.currentTask = task
         
-        let decoder = JSONDecoder()
-        
-        do {
-          let response = try decoder.decode(CurrencyExchangeResponse.self, from: data)
-          
-          guard let amount = response.amountAsDouble else {
-            throw CurrencyServiceError.decodingError("Failed to convert amount '\(response.amount)' to Double")
+        Task {
+          do {
+            let result = try await task.value
+            continuation.resume(returning: result)
+          } catch {
+            continuation.resume(throwing: error)
           }
-          
-          /// Calculate and cache the exchange rate
-          let rate = amount / fromAmount
-          cacheRate(rate, for: cacheKey)
-          
-          log("🔄 Exchange Rate: \(rate) \(toCurrency.code)/\(fromCurrency.code)")
-          return amount
-        } catch {
-          log("❌ Decoding Error: \(error.localizedDescription)")
-          throw CurrencyServiceError.decodingError(error.localizedDescription)
         }
-      } catch let error as CurrencyServiceError {
-        throw error
-      } catch {
-        if Task.isCancelled {
-          log("🛑 Task was cancelled")
-          throw CurrencyServiceError.taskCancelled
-        }
-        log("❌ Network Error: \(error.localizedDescription)")
-        throw CurrencyServiceError.networkError(error)
       }
-    }
-    
-    self.currentTask = task
-    
-    do {
-      return try await task.value
-    } catch {
-      if Task.isCancelled {
-        throw CurrencyServiceError.taskCancelled
-      }
-      throw error
     }
   }
   
