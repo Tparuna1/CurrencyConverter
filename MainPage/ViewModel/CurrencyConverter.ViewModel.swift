@@ -32,12 +32,23 @@ final class CurrencyConverterViewModel: ObservableObject {
   private var timer: AnyCancellable?
   private var lastInputAmountValue: String = ""
   
+  /// Task to track the current operation
+  private var currentConversionTask: Task<Void, Never>?
+  
+  /// Serial queue for task management
+  private let taskQueue = DispatchQueue(label: "com.currencyconverter.viewmodel.taskQueue")
+  
   // MARK: - Initializer
   
   init(service: CurrencyServiceProtocol = CurrencyService(loggingEnabled: true)) {
     self.service = service
     setupBindings()
     fetchInitialExchangeRate()
+  }
+  
+  deinit {
+    timer?.cancel()
+    currentConversionTask?.cancel()
   }
   
   // MARK: - Setup Methods
@@ -50,15 +61,24 @@ final class CurrencyConverterViewModel: ObservableObject {
       .sink { [weak self] newValue in
         guard let self = self, self.lastInputAmountValue != newValue else { return }
         self.lastInputAmountValue = newValue
-        Task { await self.convert() }
+        self.cancelCurrentTask()
+        
+        self.currentConversionTask = Task {
+          await self.convert()
+        }
       }
       .store(in: &cancellables)
     
     /// Monitor currency changes
     Publishers.CombineLatest($fromCurrency, $toCurrency)
       .dropFirst()
+      .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
       .sink { [weak self] fromCurrency, toCurrency in
-        Task { await self?.fetchExchangeRate() }
+        self?.cancelCurrentTask()
+        
+        self?.currentConversionTask = Task {
+          await self?.fetchExchangeRate()
+        }
       }
       .store(in: &cancellables)
     
@@ -66,32 +86,52 @@ final class CurrencyConverterViewModel: ObservableObject {
     timer = Timer.publish(every: 10, on: .main, in: .common)
       .autoconnect()
       .sink { [weak self] _ in
-        Task { await self?.fetchExchangeRate(forceRefresh: true) }
+        self?.cancelCurrentTask()
+        
+        self?.currentConversionTask = Task {
+          await self?.fetchExchangeRate(forceRefresh: true)
+        }
       }
+  }
+  
+  // MARK: - Task Management
+  
+  private func cancelCurrentTask() {
+    taskQueue.async {
+      self.currentConversionTask?.cancel()
+      self.currentConversionTask = nil
+      self.service.cancelOngoingRequests()
+    }
   }
   
   // MARK: - Public Methods
   
   func fetchInitialExchangeRate() {
-    Task { await self.fetchExchangeRate() }
+    cancelCurrentTask()
+    
+    currentConversionTask = Task {
+      await self.fetchExchangeRate()
+    }
   }
   
   func swapCurrencies() {
     let tempCurrency = fromCurrency
     fromCurrency = toCurrency
     toCurrency = tempCurrency
-    
-    /// After swapping, fetch the updated exchange rate
-    Task { await fetchExchangeRate() }
   }
   
   func fetchExchangeRate(forceRefresh: Bool = false) async {
+    /// Skip if a task is already in progress
+    guard !isLoading else { return }
+    
     isLoading = true
     errorMessage = nil
+    
     /// Skip if currencies are the same
     if fromCurrency == toCurrency {
       exchangeRate = "1.00"
       await convert()
+      isLoading = false
       return
     }
     
@@ -99,9 +139,6 @@ final class CurrencyConverterViewModel: ObservableObject {
     if forceRefresh {
       service.clearCache()
     }
-    
-    isLoading = true
-    errorMessage = nil
     
     do {
       let amount: Double = 1.0
@@ -111,14 +148,22 @@ final class CurrencyConverterViewModel: ObservableObject {
         toCurrency: toCurrency
       )
       
+      /// Check if we're still valid and not cancelled
+      guard !Task.isCancelled else {
+        isLoading = false
+        return
+      }
+      
       /// Calculate the actual exchange rate
       let rate = exchangeRateValue / amount
-      exchangeRate = String(format: "%.4f", rate)
+      exchangeRate = String(format: "%.2f", rate)
       
       /// Update the converted amount
       await convert()
     } catch {
-      handleError(error)
+      if !Task.isCancelled {
+        handleError(error)
+      }
     }
     
     isLoading = false
@@ -148,6 +193,9 @@ final class CurrencyConverterViewModel: ObservableObject {
     guard let exchangeRateValue = Double(exchangeRate), exchangeRateValue > 0 else {
       /// If not, try to fetch it first
       await fetchExchangeRate()
+      
+      /// Check for cancellation
+      guard !Task.isCancelled else { return }
       
       /// Then check again
       guard let exchangeRateValue = Double(exchangeRate), exchangeRateValue > 0 else {
@@ -197,6 +245,10 @@ final class CurrencyConverterViewModel: ObservableObject {
   
   private func handleError(_ error: Error) {
     if let currencyError = error as? CurrencyServiceError {
+      if case .taskCancelled = currencyError {
+        /// Don't show error for cancelled tasks
+        return
+      }
       errorMessage = currencyError.errorDescription
     } else {
       errorMessage = error.localizedDescription

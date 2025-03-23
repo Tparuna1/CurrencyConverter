@@ -36,6 +36,11 @@ final class ConverterView: UIView {
   
   private lazy var reverseButton = ButtonComponent(type: .reverse)
   
+  private lazy var exchangeRateContainer: UIView = {
+    let container = UIView()
+    return container
+  }()
+  
   private lazy var exchangeRateLabel: UILabel = {
     let label = UILabel()
     label.font = .systemFont(ofSize: Grid.FontSize.regular)
@@ -101,12 +106,15 @@ final class ConverterView: UIView {
     fieldsContainer.addContent(fieldsStackView)
     fieldsContainer.contentView.addSubview(reverseButton)
     
+    exchangeRateContainer.addSubview(exchangeRateLabel)
+    exchangeRateContainer.addSubview(activityIndicator)
+    
     converterStackView.addArrangedSubviews([
       selectorsContainer,
       fieldsContainer,
-      exchangeRateLabel,
+      exchangeRateContainer,
     ])
-    addSubview(activityIndicator)
+    
     addSubview(converterStackView)
   }
   
@@ -121,9 +129,17 @@ final class ConverterView: UIView {
       make.size.equalTo(Grid.Size.xl4)
     }
     
+    exchangeRateContainer.snp.makeConstraints { make in
+      make.height.equalTo(Grid.Size.m)
+    }
+    
+    exchangeRateLabel.snp.makeConstraints { make in
+      make.edges.equalToSuperview()
+    }
+    
     activityIndicator.snp.makeConstraints { make in
-      make.center.equalTo(exchangeRateLabel)
-      make.width.height.equalTo(Grid.Size.xl3)
+      make.center.equalToSuperview()
+      make.width.height.equalTo(Grid.Size.m)
     }
   }
   
